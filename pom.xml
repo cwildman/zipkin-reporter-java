@@ -32,6 +32,7 @@
     <module>okhttp3</module>
     <module>spring-beans</module>
     <module>benchmarks</module>
+    <module>newrelic</module>
   </modules>
 
   <properties>

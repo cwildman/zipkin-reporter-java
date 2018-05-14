@@ -56,6 +56,7 @@ public final class OkHttpSender extends Sender {
     final OkHttpClient.Builder clientBuilder;
     HttpUrl endpoint;
     Encoding encoding = Encoding.JSON;
+    RequestBodyMessageEncoder encoder = null;
     boolean compressionEnabled = true;
     int maxRequests = 64;
     int messageMaxBytes = 5 * 1024 * 1024;
@@ -121,6 +122,11 @@ public final class OkHttpSender extends Sender {
       return this;
     }
 
+    public Builder encoder(RequestBodyMessageEncoder encoder) {
+      this.encoder = encoder;
+      return this;
+    }
+
     /** Sets the default connect timeout (in milliseconds) for new connections. Default 10000 */
     public final Builder connectTimeout(int connectTimeoutMillis) {
       clientBuilder.connectTimeout(connectTimeoutMillis, MILLISECONDS);
@@ -159,15 +165,19 @@ public final class OkHttpSender extends Sender {
     if (builder.endpoint == null) throw new NullPointerException("endpoint == null");
     endpoint = builder.endpoint;
     encoding = builder.encoding;
-    switch (encoding) {
-      case JSON:
-        encoder = RequestBodyMessageEncoder.JSON;
-        break;
-      case PROTO3:
-        encoder = RequestBodyMessageEncoder.PROTO3;
-        break;
-      default:
-        throw new UnsupportedOperationException("Unsupported encoding: " + encoding.name());
+    if (builder.encoder == null) {
+      switch (encoding) {
+        case JSON:
+          encoder = RequestBodyMessageEncoder.JSON;
+          break;
+        case PROTO3:
+          encoder = RequestBodyMessageEncoder.PROTO3;
+          break;
+        default:
+          throw new UnsupportedOperationException("Unsupported encoding: " + encoding.name());
+      }
+    } else {
+      encoder = builder.encoder;
     }
     maxRequests = builder.maxRequests;
     messageMaxBytes = builder.messageMaxBytes;

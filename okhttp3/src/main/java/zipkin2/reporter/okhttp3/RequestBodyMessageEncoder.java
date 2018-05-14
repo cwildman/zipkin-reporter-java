@@ -20,7 +20,9 @@ import okhttp3.RequestBody;
 import okio.BufferedSink;
 import zipkin2.codec.Encoding;
 
-enum RequestBodyMessageEncoder {
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+public enum RequestBodyMessageEncoder {
   JSON {
     @Override public RequestBody encode(List<byte[]> values) {
       return new JsonRequestBody(values);
@@ -29,6 +31,11 @@ enum RequestBodyMessageEncoder {
   PROTO3 {
     @Override RequestBody encode(List<byte[]> encodedSpans) {
       return new Protobuf3RequestBody(encodedSpans);
+    }
+  },
+  NEW_RELIC_JSON {
+    @Override public RequestBody encode(List<byte[]> values) {
+      return new NewRelicJsonRequestBody(values);
     }
   };
 
@@ -82,6 +89,31 @@ enum RequestBodyMessageEncoder {
         byte[] next = values.get(i++);
         sink.write(next);
       }
+    }
+  }
+
+  static final class NewRelicJsonRequestBody extends StreamingRequestBody {
+    static final MediaType CONTENT_TYPE = MediaType.parse("application/json");
+
+    NewRelicJsonRequestBody(List<byte[]> values) {
+      super(Encoding.JSON, CONTENT_TYPE, values);
+    }
+
+    @Override public void writeTo(BufferedSink sink) throws IOException {
+      sink.writeString("{\"spans\":", UTF_8);
+      sink.writeByte('[');
+      for (int i = 0, length = values.size(); i < length; ) {
+        byte[] next = values.get(i++);
+        sink.write(next);
+        if (i < length) sink.writeByte(',');
+      }
+      sink.writeByte(']');
+      sink.writeByte('}');
+    }
+
+    @Override
+    public long contentLength() {
+      return super.contentLength() + 10;
     }
   }
 
