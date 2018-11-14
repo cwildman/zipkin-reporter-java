@@ -37,7 +37,10 @@ public class NewRelicSpanWriter implements Buffer.Writer<Span> {
         // name
         sizeInBytes += 10 + span.name().length();
         // timestamp
-        final long timestampMs = span.timestamp() / 1000;
+        long timestampMs = 0L;
+        if (span.timestamp() != null) {
+            timestampMs = span.timestamp() / 1000;
+        }
         sizeInBytes += 13 + Buffer.asciiSizeInBytes(timestampMs);
         // durationMs
         final double durationMs = (span.duration() != null) ? span.duration() / 1000.0 : 0.0;
